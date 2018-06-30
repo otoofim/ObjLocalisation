@@ -86,8 +86,9 @@ def create_example(xml_file):
     image_name = root.find('filename').text
     file_name = image_name.encode('utf8')
     size=root.find('size')
-    width = int(size[0].text)
-    height = int(size[1].text)
+    width = int(size.find("width").text)
+    height = int(size.find("height").text)
+    depth = int(size.find("depth").text)
     
     #Initilizing variables for the loaded image
     #Please note that following variables are vector. Since an image might have more than one object a vector is used.
@@ -136,6 +137,7 @@ def create_example(xml_file):
     example = tf.train.Example(features=tf.train.Features(feature={
             'image_height': int64_feature(height),
             'image_width': int64_feature(width),
+            'image_depth': int64_feature(depth),
             'image_filename': bytes_feature(file_name),
             'image': bytes_list_feature(img),
             'xmin': float_list_feature(xmin),
@@ -185,7 +187,7 @@ def run(xml_path, destination_path):
         example = create_example(xml_file)
         
         #each 10th file (xml and image) write it for evaluation
-        if (i%10)==0: 
+        if (i%5)==0: 
             writer_test.write(example.SerializeToString())
             tst=tst+1
         #the rest for training
