@@ -8,6 +8,9 @@ The aim of this project is to extend the algorithm ["active object localization"
   - [x] writting data provider for Pascal VOC2012
   - [x] Designing the neural network architecture as described in the paper
   - [ ] Implementing the scene processing method to conduct the agent actions and return the result after each action taken.
+    - [ ] initialising agent window
+    - [ ] completing "wrapping" function. This function is responsible to prepare the image after each action is taken. 
+       suggestion: Do not try to wrap the image instead you can resize it although its resolution would decrease. 
   - [ ] Trining the network to localise one object in the scene
   - [ ] Training the network to localise multiple object
   - [ ] Load a pretrained CNN for the first part of the network
