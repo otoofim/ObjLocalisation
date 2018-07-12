@@ -173,6 +173,6 @@ class PascalDataProvider(DataProvider):
 
     def next(self):
         """Returns next data batch or raises `StopIteration` if at end."""
-        inputs_batch, targets_batch = super(MNISTDataProvider, self).next()
+        inputs_batch, targets_batch = super(PascalDataProvider, self).next()
         #return inputs_batch, self.to_one_of_k(targets_batch)
         return inputs_batch, targets_batch
