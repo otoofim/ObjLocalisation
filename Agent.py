@@ -1,14 +1,17 @@
 
+# coding: utf-8
+
+# In[5]:
+
+
 import numpy as np
 from PIL import Image
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
+import time
 
 
-
-# coding: utf-8
-
-# In[13]:
+# In[24]:
 
 
 # ACTIONS
@@ -22,8 +25,9 @@ SCALE_DOWN         = 6
 ASPECT_RATIO_DOWN  = 7
 SPLIT_HORIZONTAL   = 8
 SPLIT_VERTICAL     = 9
-SKIP_REGION        = 10
-PLACE_LANDMARK     = 11
+PLACE_LANDMARK     = 10
+SKIP_REGION        = 11
+
 
 
 DIMENSION = 224
@@ -43,22 +47,15 @@ class ObjLocaliser(object):
         resized_img = PILimg.resize((DIMENSION,DIMENSION))
         #Image is stored as np array
         self.image_playground = np.array(resized_img)
-        
-        #Computing the scale of resize to recompute the position of bounding boxes
-        #self.x_scale = 224./im2.size[0]
-        #self.y_scale = 224./im2.size[1]
-        
-        #Multiplying xmin and xmax of boxes by x_scale and ymax and ymin by y_scale
-        #self.xmin =
-        #self.xmax =
-        #self.ymin =
-        #self.ymax =
         self.targets = self.gettingTargerReady(boundingBoxes)
+        
         #Initializing sliding window from top left corner of the image
-        #[x_top_left_corner, y_top_left_corner, x_down_right_corner, y_down_right_corner]
         #self.agent_window = np.array([0,0,DIMENSION,DIMENSION])
         self.agent_window = np.array([0,0,100,50])
         self.iou = 0
+        #fig,ax = plt.subplots(1)
+        #self.myplot = [fig,ax]
+        #plt.show()
 
         
         self.actoins = {
@@ -72,8 +69,8 @@ class ObjLocaliser(object):
             7: 'ASPECT_RATIO_DOWN',
             8: 'SPLIT_HORIZONTAL',
             9: 'SPLIT_VERTICAL',
-            10: 'SKIP_REGION',
-            11: 'PLACE_LANDMARK'
+            10: 'PLACE_LANDMARK',
+            11: 'SKIP_REGION'
         }
         
         
@@ -82,7 +79,7 @@ class ObjLocaliser(object):
         numOfObj = len(boundingBoxes['xmax'])
         objs = []
         for i in range(numOfObj):
-            temp = [boundingBoxes['xmin'][i], boundingBoxes['xmax'][i], boundingBoxes['ymin'][i], boundingBoxes['ymax'][i]]
+            temp = [boundingBoxes['xmin'][i], boundingBoxes['ymin'][i], boundingBoxes['xmax'][i], boundingBoxes['ymax'][i]]
             objs.append(temp)
         return objs
         
@@ -98,7 +95,7 @@ class ObjLocaliser(object):
     def takingActions(self,action):
 
         newbox = np.array([0,0,0,0])
-        
+        termination = False
         if action == MOVE_RIGHT:           
             newbox = self.MoveRight()
         elif action == MOVE_DOWN:         
@@ -119,14 +116,15 @@ class ObjLocaliser(object):
             newbox = self.splitHorizontal()
         elif action == SPLIT_VERTICAL:     
             newbox = self.splitVertical()
+        elif action == PLACE_LANDMARK:
+            newbox = self.placeLandmark()
+            termination = True
         #elif action == SKIP_REGION:        
             #self.skipRegion()
-        #elif action == PLACE_LANDMARK:     
-            #self.placeLandmark()
-            
+
         self.agent_window = newbox
         self.adjustAndClip()
-        r = self.ComputingReward()
+        r = self.ComputingReward(termination)
             
         return r
         
@@ -202,7 +200,7 @@ class ObjLocaliser(object):
         
 
     def aspectRatioUp(self):
-
+        
         newbox = self.agent_window
         boxH = self.agent_window[3] - self.agent_window[1]
         boxW = self.agent_window[2] - self.agent_window[0]
@@ -217,7 +215,7 @@ class ObjLocaliser(object):
             else:
                 newDelta = 0.0
         else:
-            newDelta = self.agent_window[1] / boxH - 1
+            newDelta = self.image_playground.shape[1] / boxH - 1
             ar = (boxH + newDelta * boxH) / boxW
             if ar > MAX_ASPECT_RATIO:
                 newDelta =  0.0
@@ -305,6 +303,7 @@ class ObjLocaliser(object):
             newbox[2] -= half
         return newbox
 
+    
     def splitVertical(self): 
         
         newbox = self.agent_window
@@ -338,12 +337,22 @@ class ObjLocaliser(object):
         widthChange = newDelta * boxW / 2.0
         newbox[0] -= widthChange
         newbox[2] += widthChange
+        
         return newbox
          
     def placeLandmark(self):
-        self.landmarkIndex[ fingerprint(self.box) ] = self.box[:]
-        self.stepsWithoutLandmark = 0
-        return self.box
+        
+        newbox = self.agent_window
+        
+        h = (self.agent_window[3] - self.agent_window[1])/2
+        h_l = h/5
+        w = (self.agent_window[2] - self.agent_window[0])/2
+        w_l = w/5
+        
+        self.image_playground[self.agent_window[1]+h-h_l:self.agent_window[1]+h+h_l,self.agent_window[0]:self.agent_window[2]] = 0
+        self.image_playground[self.agent_window[1]:self.agent_window[3],self.agent_window[0]+w-w_l:self.agent_window[0]+w+w_l] = 0
+                
+        return newbox
 
         
         
@@ -417,18 +426,32 @@ class ObjLocaliser(object):
         # return the intersection over union value
         return iou  
     
-    def ComputingReward(self):
+    
+    def ComputingReward(self, termination = False):
         
-        new_iou = self.intersectionOverUnion(self.agent_window, self.targets[0])
-        reward = new_iou - self.iou
+        new_iou = self.intersectionOverUnion(self.agent_window, np.array(self.targets[0]))
+        reward = 0
+        
+        if new_iou - self.iou > 0:
+            reward = 1
+        else:
+            reward = -1
+            
+        if termination:
+                        
+            if (new_iou > 0.6) or (new_iou == 1):
+                reward = 3
+		#print("Successfuly found the obj!")
+            else:
+                reward = -3
+            
         self.iou = new_iou
         return reward
-                
+                        
         
         
     def drawActions(self):
                 
-
         # Create figure and axes
         fig,ax = plt.subplots(1)
 
@@ -440,9 +463,8 @@ class ObjLocaliser(object):
 
         # Add the patch to the Axes
         ax.add_patch(rect)
-
+        plt.draw()
         plt.show()
-
 
 
 
