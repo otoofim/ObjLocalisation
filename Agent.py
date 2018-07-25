@@ -1,7 +1,7 @@
 
 # coding: utf-8
 
-# In[5]:
+# In[12]:
 
 
 import numpy as np
@@ -9,9 +9,10 @@ from PIL import Image
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 import time
+import cv2 as cv
 
 
-# In[24]:
+# In[22]:
 
 
 # ACTIONS
@@ -44,14 +45,16 @@ class ObjLocaliser(object):
         #PILimg = Image.fromarray(image)
         PILimg = image
         #Resizing the image to be compatible to the network
-        resized_img = PILimg.resize((DIMENSION,DIMENSION))
+        resized_img = cv.resize(PILimg,(DIMENSION,DIMENSION))
         #Image is stored as np array
         self.image_playground = np.array(resized_img)
+        self.yscale = float(DIMENSION)/image.shape[0]
+        self.xscale = float(DIMENSION)/image.shape[1]
         self.targets = self.gettingTargerReady(boundingBoxes)
         
         #Initializing sliding window from top left corner of the image
         #self.agent_window = np.array([0,0,DIMENSION,DIMENSION])
-        self.agent_window = np.array([0,0,100,50])
+        self.agent_window = np.array([0,0,DIMENSION,DIMENSION])
         self.iou = 0
         #fig,ax = plt.subplots(1)
         #self.myplot = [fig,ax]
@@ -79,7 +82,7 @@ class ObjLocaliser(object):
         numOfObj = len(boundingBoxes['xmax'])
         objs = []
         for i in range(numOfObj):
-            temp = [boundingBoxes['xmin'][i], boundingBoxes['ymin'][i], boundingBoxes['xmax'][i], boundingBoxes['ymax'][i]]
+            temp = [boundingBoxes['xmin'][i]*self.xscale, boundingBoxes['ymin'][i]*self.yscale, boundingBoxes['xmax'][i]*self.xscale, boundingBoxes['ymax'][i]*self.yscale]
             objs.append(temp)
         return objs
         
@@ -88,7 +91,10 @@ class ObjLocaliser(object):
         #Pick selected window from image
         im2 = self.image_playground[self.agent_window[1]:self.agent_window[3],self.agent_window[0]:self.agent_window[2]]
         #Resizing the agent window to be compatible for network input
-        resized = Image.fromarray(im2).resize((DIMENSION,DIMENSION))
+        #resized = Image.fromarray(im2).resize((DIMENSION,DIMENSION))
+	resized = cv.resize(im2,(DIMENSION,DIMENSION))
+        #resized = np.stack((resized[:,:,0],resized[:,:,1],resized[:,:,2],self.image_playground[:,:,0],self.image_playground[:,:,1],self.image_playground[:,:,2]), axis=2)
+
         return resized
     
     
@@ -223,6 +229,7 @@ class ObjLocaliser(object):
         heightChange = newDelta * boxH / 2.0
         newbox[1] -= heightChange
         newbox[3] += heightChange
+
         
         return newbox
 
@@ -399,6 +406,18 @@ class ObjLocaliser(object):
             else:
                 self.agent_window[1] = 0
                 self.agent_window[3] = self.image_playground.shape[1] - 1
+        
+        if self.agent_window[0] == self.agent_window[2]:
+            if self.agent_window[2] + MIN_BOX_SIDE < self.image_playground.shape[0]:
+                self.agent_window[2] = self.agent_window[2] + MIN_BOX_SIDE
+            else:
+                self.agent_window[0] = self.agent_window[0] - MIN_BOX_SIDE
+                
+        if self.agent_window[1] == self.agent_window[3]:
+            if self.agent_window[3] + MIN_BOX_SIDE < self.image_playground.shape[1]:
+                self.agent_window[3] = self.agent_window[3] + MIN_BOX_SIDE
+            else:
+                self.agent_window[1] = self.agent_window[1] - MIN_BOX_SIDE
 
                 
     def intersectionOverUnion(self, boxA, boxB):
@@ -441,7 +460,6 @@ class ObjLocaliser(object):
                         
             if (new_iou > 0.6) or (new_iou == 1):
                 reward = 3
-		#print("Successfuly found the obj!")
             else:
                 reward = -3
             
@@ -466,5 +484,6 @@ class ObjLocaliser(object):
         plt.draw()
         plt.show()
 
+        
 
 
