@@ -11,9 +11,12 @@ The aim of this project is to extend the algorithm ["active object localization"
     - [x] initialising agent window
     - [x] completing "wrapping" function. This function is responsible to prepare the image after each action is taken. 
        suggestion: Do not try to wrap the image instead you can resize it although its resolution would decrease. 
-    - [ ] Completing skip region and put mark actions
-    - [ ] adding error function
-  - [ ] Trining the network to localise one object in the scene
+    - [x] Completing skip region and put mark actions
+    - [x] adding error function
+  - [x] Trining the network to localise one object in the scene
+  - [ ] Model is unstable. Error and mean reward per episode diverge
+    - [ ] Add experience replay
+    - [ ] Add separate network for generating the targets 
   - [ ] Training the network to localise multiple object
   - [ ] Load a pretrained CNN for the first part of the network
 - [ ] Combine retina work to "active object localisation" and report how much it improves efficiency  
