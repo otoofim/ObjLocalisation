@@ -27,3 +27,4 @@ The aim of this project is to extend the algorithm ["active object localization"
 
 - [ ] Train agent to learn how to change alpha
 - [ ] Adding a new action for agent to be able to finish the seach in an image 
+- [ ] Training the network to detect objects as well in an end-to-end manner
