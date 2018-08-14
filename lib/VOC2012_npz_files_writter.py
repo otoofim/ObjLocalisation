@@ -92,10 +92,15 @@ def create_example(xml_file):
 
         #Adding boundary of the object
         boundBox = member.find("bndbox")
-        xmin.append(float(boundBox[0].text))
-        ymin.append(float(boundBox[1].text))
-        xmax.append(float(boundBox[2].text))
-        ymax.append(float(boundBox[3].text))
+        for elem in boundBox:
+            if elem.tag == "xmax":
+                xmax.append(float(elem.text))
+            elif elem.tag == "xmin":
+                xmin.append(float(elem.text))
+            elif elem.tag == "ymin":
+                ymin.append(float(elem.text))
+            elif elem.tag == "ymax":
+                ymax.append(float(elem.text))
 
         #Adding difficulty attributes. It means how far it is difficult to recognise the object
         difficult_obj.append(int(member.find("difficult").text))
@@ -126,7 +131,7 @@ def create_example(xml_file):
                 'ymin': ymin,
                 'ymax': ymax,
                 # The following features are unnecessay for this task but they can be uncommented for other purposes.
-                #'classes': classes_text,
+                'classes': classes_text,
                 #'label': classes,
                 #'difficult': difficult_obj,
                 #'truncated': int64_list_feature(truncated),
@@ -164,7 +169,7 @@ def writting_files(xml_dir, dest_dir, percentage):
             temp = {'image_height':example['image_height'], 'image_width':example['image_width'], 'image_depth':example['image_depth'], 'image':example['image'], 'image_filename':example['image_filename']}
             test_input.append(temp)
 
-            temp = {'xmin':example['xmin'], 'xmax':example['xmax'], 'ymin':example['ymin'], 'ymax':example['ymax']}
+            temp = {'xmin':example['xmin'], 'xmax':example['xmax'], 'ymin':example['ymin'], 'ymax':example['ymax'], 'objName':example['classes']}
             test_target.append(temp)
 
             tst=tst+1
@@ -175,7 +180,7 @@ def writting_files(xml_dir, dest_dir, percentage):
             temp = {'image_height':example['image_height'], 'image_width':example['image_width'], 'image_depth':example['image_depth'], 'image':example['image'], 'image_filename':example['image_filename']}
             train_input.append(temp)
 
-            temp = {'xmin':example['xmin'], 'xmax':example['xmax'], 'ymin':example['ymin'], 'ymax':example['ymax']}
+            temp = {'xmin':example['xmin'], 'xmax':example['xmax'], 'ymin':example['ymin'], 'ymax':example['ymax'], 'objName':example['classes']}
             train_target.append(temp)
 
             trn=trn+1

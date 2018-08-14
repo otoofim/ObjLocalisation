@@ -133,7 +133,7 @@ class DataProvider(object):
 class PascalDataProvider(DataProvider):
     """Data provider for Pascal VOC 2012 images."""
 
-    def __init__(self, which_set='train', batch_size=100, max_num_batches=-1,
+    def __init__(self, fileNumb, which_set='train', batch_size=100, max_num_batches=-1,
                  shuffle_order=True, rng=None):
         """Create a new MNIST data provider object.
         Args:
@@ -159,17 +159,21 @@ class PascalDataProvider(DataProvider):
         # construct path to data using os.path.join to ensure the correct path
         # separator for the current platform / OS is used
         # Pa should point to the data directory
-        data_path = os.path.join("", '../data/train1_input.npz'.format(which_set))
+        data_path = os.path.join("", '../data/{0}{1}_input.npz'.format(which_set, fileNumb))
         assert os.path.isfile(data_path), ('Data file does not exist at expected path: ' + data_path)
         # load data from compressed numpy file
         loaded = np.load(data_path)
         inputs= loaded['arr_0']
-        targets = np.load("../data/train1_target.npz")['arr_0']
+        targets = np.load('../data/{0}{1}_target.npz'.format(self.which_set, fileNumb))['arr_0']
         #inputs, targets = loaded['inputs'], loaded['targets']
         #inputs = inputs.astype(np.float32)
         # pass the loaded data to the parent class __init__
         super(PascalDataProvider, self).__init__(
             inputs, targets, batch_size, max_num_batches, shuffle_order, rng)
+
+
+
+
 
     def next(self):
         """Returns next data batch or raises `StopIteration` if at end."""
