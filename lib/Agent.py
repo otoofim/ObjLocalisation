@@ -514,7 +514,7 @@ class ObjLocaliser(object):
 
         if termination:
 
-            if (new_iou > 0.6) or (new_iou == 1):
+            if (new_iou > 0.5):
                 reward = 3
             else:
                 reward = -3

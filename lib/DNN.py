@@ -1,4 +1,14 @@
-
+import numpy as np
+import os
+import random
+import sys
+import psutil
+import tensorflow as tf
+import plotting
+from collections import deque, namedtuple
+import matplotlib.pyplot as plt
+import math
+import matplotlib as mp
 
 
 # Atari Actions: 0 (noop), 1 (fire), 2 (left) and 3 (right) are valid actions
@@ -127,7 +137,7 @@ class Estimator():
 
         Args:
           sess: Tensorflow session
-          s: State input of shape [batch_size, 4, 160, 160, 3]
+          s: State input of shape [batch_size , 80, 80, 4]
 
         Returns:
           Tensor of shape [batch_size, NUM_VALID_ACTIONS] containing the estimated 
@@ -136,7 +146,16 @@ class Estimator():
 
         return sess.run(self.predictions, { self.X_pl: s })
     
-    def visulize_layers(self, sess, s):
+    def visulize_layers(self, sess, s, layer):
+
+        """
+        Predicts action values.
+
+        Args:
+          sess: Tensorflow session
+          s: State input of shape [batch_size , 80, 80, 4]
+
+        """
             
         conv1, conv2, conv3 = sess.run([self.conv1, self.conv2, self.conv3], { self.X_pl: s })
         plotNNFilter(conv1)
@@ -220,7 +239,13 @@ def make_epsilon_greedy_policy(estimator, nA):
     def policy_fn(sess, observation, epsilon):
         A = np.ones(nA, dtype=float) * epsilon / nA
         q_values = estimator.predict(sess, np.expand_dims(observation, 0))[0]
+	#print "q:{}".format(q_values) 
         best_action = np.argmax(q_values)
         A[best_action] += (1.0 - epsilon)
         return A
     return policy_fn
+
+
+
+
+
