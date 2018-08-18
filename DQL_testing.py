@@ -55,7 +55,7 @@ model_name = "cat_loss_test"
 tf.reset_default_graph()
 
 # Where we save our checkpoints and graphs
-experiment_dir = os.path.abspath("/home/mohammad/active localization/trained_on_cluster_final/{}".format(model_name))
+experiment_dir = os.path.abspath("./experiments/{}".format(model_name))
 
 # Create a glboal step variable
 global_step = tf.Variable(0, name='global_step', trainable=False)

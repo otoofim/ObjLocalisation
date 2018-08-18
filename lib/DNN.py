@@ -11,9 +11,11 @@ import math
 import matplotlib as mp
 
 
-# Atari Actions: 0 (noop), 1 (fire), 2 (left) and 3 (right) are valid actions
+# Atari Actions: 0 (right), 1 (down), 2 (scale up), 3 (aspect ratio up), 4 (left), 5 (up), 6 (scale down), 7 (aspect ratio down), 8 (split horizontal), 9 (split vetical), and 10 (termination) are valid actions
+
 VALID_ACTIONS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
+# Helper function to visualize conv layers
 def plotNNFilter(units):
     filters = units.shape[3]
     plt.figure(1, figsize=(20,20))
@@ -34,9 +36,7 @@ class StateProcessor():
         with tf.variable_scope("state_processor"):
             self.input_state = tf.placeholder(shape=[84, 84, 3], dtype=tf.uint8)
             self.output = tf.image.rgb_to_grayscale(self.input_state)
-            #self.output = tf.image.crop_to_bounding_box(self.output, 34, 0, 160, 160)
-            self.output = tf.image.resize_images(
-                self.output, [84, 84], method=tf.image.ResizeMethod.NEAREST_NEIGHBOR)
+            self.output = tf.image.resize_images(self.output, [84, 84], method=tf.image.ResizeMethod.NEAREST_NEIGHBOR)
             self.output = tf.squeeze(self.output)
 
     def process(self, sess, state):
@@ -69,7 +69,7 @@ class Estimator():
                 summary_dir = os.path.join(summaries_dir, "summaries_{}".format(scope))
                 if not os.path.exists(summary_dir):
                     os.makedirs(summary_dir)
-                self.summary_writer = tf.summary.FileWriter(summary_dir) # Old API: tf.train.SummaryWriter
+                self.summary_writer = tf.train.SummaryWriter(summary_dir) 
 
     def _build_model(self):
         """
@@ -83,6 +83,7 @@ class Estimator():
         self.y_pl = tf.placeholder(shape=[None], dtype=tf.float32, name="y")
         # Integer id of which action was selected
         self.actions_pl = tf.placeholder(shape=[None], dtype=tf.int32, name="actions")
+        self.keep_prob = tf.placeholder(tf.float32)
 
         X = tf.to_float(self.X_pl) / 255.0
         batch_size = tf.shape(self.X_pl)[0]
@@ -101,6 +102,7 @@ class Estimator():
 
         # Fully connected layers
         flattened = tf.contrib.layers.flatten(conv3)
+        flattened = tf.nn.dropout(flattened, self.keep_prob)
         fc1 = tf.contrib.layers.fully_connected(flattened, 512)
         self.predictions = tf.contrib.layers.fully_connected(fc1, len(VALID_ACTIONS))
 
@@ -118,20 +120,14 @@ class Estimator():
         # Summaries for Tensorboard
         
         # Old APIs for using on cluster
-        '''tf.scalar_summary("loss", self.loss, collections=['summ'])
+        tf.scalar_summary("loss", self.loss, collections=['summ'])
         tf.histogram_summary("loss_hist", self.losses, collections=['summ'])
         tf.histogram_summary("q_values_hist", self.predictions, collections=['summ'])
         tf.scalar_summary("max_q_value", tf.reduce_max(self.predictions), collections=['summ'])
-        self.summaries = tf.merge_all_summaries(key='summ')'''
+        self.summaries = tf.merge_all_summaries(key='summ')
         
-        self.summaries = tf.summary.merge([ 
-            tf.summary.scalar("loss", self.loss), 
-            tf.summary.histogram("loss_hist", self.losses), 
-            tf.summary.histogram("q_values_hist", self.predictions), 
-            tf.summary.scalar("max_q_value", tf.reduce_max(self.predictions))
-        ])
 
-    def predict(self, sess, s):
+    def predict(self, sess, s, keep_prob = 1):
         """
         Predicts action values.
 
@@ -144,7 +140,7 @@ class Estimator():
           action values.
         """
 
-        return sess.run(self.predictions, { self.X_pl: s })
+        return sess.run(self.predictions, { self.X_pl: s, self.keep_prob: keep_prob })
     
     def visulize_layers(self, sess, s, layer):
 
@@ -162,7 +158,7 @@ class Estimator():
 
         
 
-    def update(self, sess, s, a, y):
+    def update(self, sess, s, a, y, keep_prob = 0.5):
         """
         Updates the estimator towards the given targets.
 
@@ -175,13 +171,11 @@ class Estimator():
         Returns:
           The calculated loss on the batch.
         """
-        feed_dict = { self.X_pl: s, self.y_pl: y, self.actions_pl: a }
+        feed_dict = { self.X_pl: s, self.y_pl: y, self.actions_pl: a, self.keep_prob: keep_prob }
         summaries, global_step, _, loss = sess.run(
             [self.summaries, tf.contrib.framework.get_global_step(), self.train_op, self.loss],
             feed_dict)
         if self.summary_writer:
-            # Old API for using on cluster
-            # self.summary_writer.add_summary(summaries, global_step.eval())
             self.summary_writer.add_summary(summaries, global_step)
         return loss
 

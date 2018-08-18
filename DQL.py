@@ -55,12 +55,12 @@ update_target_estimator_every=10000 #100
 discount_factor=0.99
 epsilon_start=1.0
 epsilon_end=0.1
-epsilon_decay_steps=500000 #10000  
+epsilon_decay_steps=500 #10000  
 batch_size=32
 category = "cat"
 
-#model_name = "defaul_DQL_architecture_epis{}_memorySize{}_UTE{}_EDS{}".format(num_episodes, replay_memory_size, update_target_estimator_every, epsilon_decay_steps)
-model_name = "test"
+
+model_name = "testtest"
 
 
 tf.reset_default_graph()
@@ -86,8 +86,8 @@ rlist = []
 
 
 with tf.Session() as sess:
-    sess.run(tf.global_variables_initializer()) 
-    # Old API: sess.run(tf.initialize_all_variables())  
+    
+    sess.run(tf.initialize_all_variables()) 
     Transition = namedtuple("Transition", ["state", "action", "reward", "next_state", "done"])
 
     # The replay memory
@@ -98,10 +98,6 @@ with tf.Session() as sess:
     # Make model copier object
     estimator_copy = ModelParametersCopier(q_estimator, target_estimator)
 
-    # Keeps track of useful statistics
-    #stats = plotting.EpisodeStats(
-        #episode_lengths=np.zeros(num_episodes),
-        #episode_rewards=np.zeros(num_episodes))
 
     # For 'system/' summaries, usefull to check if currrent process looks healthy
     current_process = psutil.Process()
@@ -125,7 +121,6 @@ with tf.Session() as sess:
 
     # Get the current time step
     total_t = sess.run(tf.contrib.framework.get_global_step())
-    #print "init:{}".format(total_t)
 
     # The epsilon decay schedule
     epsilons = np.linspace(epsilon_start, epsilon_end, epsilon_decay_steps)
@@ -135,12 +130,9 @@ with tf.Session() as sess:
         q_estimator,
         len(VALID_ACTIONS))
     episode_counter = 0
-    #mybreak = 0
     
     for indx,tmp in enumerate(extractData(category, "train", batch_size)):
 
-        #if mybreak > 5:
-            #break
         
         img=tmp[0]
         target=tmp[1]
@@ -163,20 +155,9 @@ with tf.Session() as sess:
 
             for i in range(replay_memory_init_size):
 
-                #env.Reset(np.array(im2))
-                #state = env.wrapping()
-                #state = state_processor.process(sess, state)
-                #state = np.stack([state] * 4, axis=2)
-                #action = 0
-                #counter = 0
-                #done = False
-
-                #while (action != 10) or (counter < 50):
-
                 action_probs, _ = policy(sess, state, epsilons[min(total_t, epsilon_decay_steps-1)])
                 action = np.random.choice(np.arange(len(action_probs)), p=action_probs)
 
-                #next_state, reward, done, _ = env.step(VALID_ACTIONS[action])
                 reward = env.takingActions(VALID_ACTIONS[action])
                 next_state = env.wrapping()
 
@@ -190,10 +171,8 @@ with tf.Session() as sess:
                 replay_memory.append(Transition(state, action, reward, next_state, done))
                 state = next_state
 
-                #counter += 1
 
                 if done:
-                    #state = env.reset()
                     env.Reset(np.array(im2))
                     state = env.wrapping()
                     state = state_processor.process(sess, state)
@@ -210,7 +189,6 @@ with tf.Session() as sess:
             saver.save(tf.get_default_session(), checkpoint_path)
 
             # Reset the environment
-            #state = env.reset()
             env.Reset(np.array(im2))
             state = env.wrapping()
             state = state_processor.process(sess, state)
@@ -220,11 +198,10 @@ with tf.Session() as sess:
             action = 0
             e = 0
             r = 0
-            #done = False
+
             # One step in the environment
             while (action != 10) and (t < 50):
-                #print "hello22:{}".format(loss)
-                #env.drawActions()
+                
                 # Epsilon for this time step
                 epsilon = epsilons[min(total_t, epsilon_decay_steps-1)]
 
@@ -233,19 +210,15 @@ with tf.Session() as sess:
                     estimator_copy.make(sess)
                     print("\nCopied model parameters to target network.")
 
-                # Print out which step we're on, useful for debugging.
-                #sys.stdout.flush()
+
 
                 # Take a step
-                #print epsilon
                 action_probs, qs = policy(sess, state, epsilon)
-                print qs
                 action = np.random.choice(np.arange(len(action_probs)), p=action_probs)
 
 
                 #next_state, reward, done, _ = env.step(VALID_ACTIONS[action])
                 reward = env.takingActions(VALID_ACTIONS[action])
-                env.drawActions()
                 next_state = env.wrapping()
                 if action == 10:
                     done = True
@@ -262,9 +235,7 @@ with tf.Session() as sess:
 
                 # Save transition to replay memory
                 replay_memory.append(Transition(state, action, reward, next_state, done))   
-                # Update statistics
-                #stats.episode_rewards[i_episode] += reward
-                #stats.episode_lengths[i_episode] = t
+
 
                 # Sample a minibatch from the replay memory
                 samples = random.sample(replay_memory, batch_size)
@@ -303,26 +274,18 @@ with tf.Session() as sess:
             q_estimator.summary_writer.add_summary(episode_summary, episode_counter)
             q_estimator.summary_writer.flush()
 
-            #prin_stats = plotting.EpisodeStats(
-                #episode_lengths=stats.episode_lengths[:i_episode+1],
-                #episode_rewards=stats.episode_rewards[:i_episode+1])
-
-            #print("Episode Reward: {} Episode Length: {}".format(prin_stats.episode_rewards[-1], prin_stats.episode_lengths[-1]))
-            #f.write("Episode Reward: {} Episode Length: {}".format(prin_stats.episode_rewards[-1], prin_stats.episode_lengths[-1]))
             print("Episode Reward: {} Episode Length: {}".format(r, t))
             f.write("Episode Reward: {} Episode Length: {}".format(r, t))
 
             elist.append(float(e)/t)
             rlist.append(float(r)/t)
-        break
-        #mybreak += 1
 
         
 f.close()
 print "number of correct located objects:{}".format(num_located)
 
 
-# In[4]:
+# In[ ]:
 
 
 plt.xlabel("episods")
@@ -333,7 +296,7 @@ plt.savefig("./graphs/reward")
 plt.close()
 
 
-# In[5]:
+# In[ ]:
 
 
 plt.xlabel("episods")
