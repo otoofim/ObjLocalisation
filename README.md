@@ -1,6 +1,17 @@
 # ObjLocalisation
 
-The aim of this project is to extend the algorithm ["active object localization"](https://arxiv.org/abs/1511.06015). In this project, I am going to use reinforcemnt learning for object localisation task. Currently, all the methods use a sliding window to process whole an image in differnt scale to localise an image however, the method proposed by "active objet localisation" is to find an object efficiently by looking for visual clue in the image and using those clues the agent tries to localise an object. Pascal VOC dataset is used for training. The final goal is to learn a policy to localise an object in a scene with a sequence of actions including zooming in, zooming out, left, right, up, and down. Deep reinforcement learning is used to learn the policy.
+The aim of this project is to extend the algorithm ["active object localization"](https://arxiv.org/abs/1511.06015). In this project, I am going to use reinforcemnt learning for object localisation task. Currently, all the methods use a sliding window to process an entire image in differnt scale to localise an object however, the method proposed by "active objet localisation" is to find an object efficiently by looking for visual clue in the image and using those clues the agent tries to localise an object. Pascal VOC dataset is used for training. The final goal is to learn a policy to localise an object in a scene with a sequence of actions including zooming in, zooming out, left, right, up, and down. Deep reinforcement learning is used to learn the policy.
+
+# Files description:
+
+#### DQL.py: 
+  Around line 50 hyper-parameters can be set. This file includes the main for loop for training.
+#### DQL_visualization.py:
+Using this file convolutional layers can be visualized.
+#### DQL_testing.py:
+This evaluate a trained model on testdata.
+
+
 
 ## TO do list:
 
@@ -14,9 +25,9 @@ The aim of this project is to extend the algorithm ["active object localization"
     - [x] Completing skip region and put mark actions
     - [x] adding error function
   - [x] Trining the network to localise one object in the scene
-  - [ ] Model is unstable. Error and mean reward per episode diverge
-    - [ ] Add experience replay
-    - [ ] Add separate network for generating the targets 
+  - [x] Model is unstable. Error and mean reward per episode diverge
+    - [x] Add experience replay
+    - [x] Add separate network for generating the targets 
   - [ ] Training the network to localise multiple object
   - [ ] Load a pretrained CNN for the first part of the network
 - [ ] Combine retina work to "active object localisation" and report how much it improves efficiency  
