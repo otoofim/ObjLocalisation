@@ -11,12 +11,13 @@ This implementation is divided five parts:
   - Neural network implementation: The file DNN.py consist of Tensorflow implementation of DQL. To implement DQL with Tensorflow, [this tutorial](https://github.com/dennybritz/reinforcement-learning) is mainly used.
   - Setting up environment and traning models: the files DQL.py, DQL_testing.py, DQL_visualization_actions.py, and DQL_visualization-layers.py are using above stages to provide an easy to use interface for traning, evaluating, and visualizing DQL.
   
-You can use the files above by installing requierments using `pip install -r requirements.txt`.
+You can use the files above by installing requierments using `pip install -r requirements.txt`. In addition, it is needed Tensorflow to be installed. The code works fine for the latest version of Tensorflwo. However, in order to run the code on cluster it requires some changes.
 
 # Files description:
 
 #### DQL.py: 
-  Around line 50 hyper-parameters can be set. This file includes the main for loop for training.
+This file includes the main for loop for training. To statr training process first it is needed to download [Pascal VOC 2012](http://host.robots.ox.ac.uk/pascal/VOC/voc2012/). The downloaded folder should be put in address `../VOC2012`. The hyper-parameters can be set by passing parameters to the script. The format is shown below. Finally the output of the trainng process is stored in `./experiments/ModelName`. There would be three folders there. The first one is `summaries_q_estimator` consists of an TF event record. Using tensorboard, the training related graphs can be visualised. To do so, it is needed to call tensorboard in this way `tensorboard --logdir=./experiments/Modelname/summaries_q_estimator`. The second folder is repot. This folder includes `log.txt` file which is the log showed in terminal during training. And finally, the folder 'checkpoints' contains three files, which corresponds to the final saved model, and the folder 'bestModel' that includes the best model based on validation accuracy.
+
 #### DQL_visualization.py:
 Using this file convolutional layers can be visualized.
 #### DQL_testing.py:
