@@ -21,6 +21,7 @@ def extractData(objClassName, which_set, batch_size):
                 xmax = []
                 ymin = []
                 ymax = []
+		objectName = ''
                 found = False
                 for objInd, objName in enumerate(targ_batch[batch_index]['objName']):
 
@@ -29,13 +30,14 @@ def extractData(objClassName, which_set, batch_size):
                         ymin.append(targ_batch[batch_index]['ymin'][objInd]) 
                         xmax.append(targ_batch[batch_index]['xmax'][objInd])
                         ymax.append(targ_batch[batch_index]['ymax'][objInd])
+			objectName = objName
                         found = True
 
                         
                     del objInd
                     del objName
                 
-                groundtruth = {'xmin':xmin, 'ymin':ymin, 'xmax':xmax, 'ymax':ymax}
+                groundtruth = {'xmin':xmin, 'ymin':ymin, 'xmax':xmax, 'ymax':ymax, 'objName':objectName}
                 if found:
                     yield img_batch[batch_index], groundtruth
                 else:

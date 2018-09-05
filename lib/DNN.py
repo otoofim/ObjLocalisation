@@ -4,27 +4,22 @@ import random
 import sys
 import psutil
 import tensorflow as tf
-import plotting
 from collections import deque, namedtuple
 import matplotlib.pyplot as plt
 import math
 import matplotlib as mp
+from retinavision.retina import Retina
+from retinavision.cortex import Cortex
+from retinavision import datadir, utils
+import cv2
+from os.path import join
 
 
 # Atari Actions: 0 (right), 1 (down), 2 (scale up), 3 (aspect ratio up), 4 (left), 5 (up), 6 (scale down), 7 (aspect ratio down), 8 (split horizontal), 9 (split vetical), and 10 (termination) are valid actions
 
 VALID_ACTIONS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
-# Helper function to visualize conv layers
-def plotNNFilter(units):
-    filters = units.shape[3]
-    plt.figure(1, figsize=(20,20))
-    n_columns = 4
-    n_rows = math.ceil(filters / n_columns) + 1
-    for i in range(filters):
-        plt.subplot(n_rows, n_columns, i+1)
-        plt.title('Filter ' + str(i))
-        plt.imshow(units[0,:,:,i], interpolation="nearest", cmap="gray")
+
 
 
 class StateProcessor():
@@ -32,6 +27,25 @@ class StateProcessor():
     Processes a raw Atari images. Resizes it and converts it to grayscale.
     """
     def __init__(self):
+
+        '''self.R = Retina()
+        self.R.info()
+        self.R.loadLoc(join(datadir, "retinas", "ret50k_loc.pkl"))
+        self.R.loadCoeff(join(datadir, "retinas", "ret50k_coeff.pkl"))
+            
+        #Prepare retina
+        x = 84/2
+        y = 84/2
+        fixation = (y,x)
+        self.R.prepare((84,84,3), fixation)
+
+        #Create and prepare cortex
+        self.C = Cortex()
+        lp = join(datadir, "cortices", "50k_Lloc_tight.pkl")
+        rp = join(datadir, "cortices", "50k_Rloc_tight.pkl")
+        self.C.loadLocs(lp, rp)
+        self.C.loadCoeffs(join(datadir, "cortices", "50k_Lcoeff_tight.pkl"), join(datadir, "cortices", "50k_Rcoeff_tight.pkl"))
+        '''
         # Build the Tensorflow graph
         with tf.variable_scope("state_processor"):
             self.input_state = tf.placeholder(shape=[84, 84, 3], dtype=tf.uint8)
@@ -39,7 +53,7 @@ class StateProcessor():
             self.output = tf.image.resize_images(self.output, [84, 84], method=tf.image.ResizeMethod.NEAREST_NEIGHBOR)
             self.output = tf.squeeze(self.output)
 
-    def process(self, sess, state):
+    def process(self, sess, state, retina=False):
         """
         Args:
             sess: A Tensorflow session object
@@ -48,6 +62,14 @@ class StateProcessor():
         Returns:
             A processed [84, 84] state representing grayscale values.
         """
+        if retina:
+
+            state = cv2.cvtColor(state, cv2.COLOR_BGR2GRAY)
+            V = self.R.sample(state, self.fixation)
+            #tight = R.backproject_tight_last()
+            tight = self.R.backproject_last()
+            state = self.C.cort_img(V)
+        
         return sess.run(self.output, { self.input_state: state })
 
 
@@ -69,7 +91,7 @@ class Estimator():
                 summary_dir = os.path.join(summaries_dir, "summaries_{}".format(scope))
                 if not os.path.exists(summary_dir):
                     os.makedirs(summary_dir)
-                self.summary_writer = tf.train.SummaryWriter(summary_dir) 
+                self.summary_writer = tf.summary.FileWriter(summary_dir) # Old API: tf.train.SummaryWriter
 
     def _build_model(self):
         """
@@ -120,12 +142,18 @@ class Estimator():
         # Summaries for Tensorboard
         
         # Old APIs for using on cluster
-        tf.scalar_summary("loss", self.loss, collections=['summ'])
+        '''tf.scalar_summary("loss", self.loss, collections=['summ'])
         tf.histogram_summary("loss_hist", self.losses, collections=['summ'])
         tf.histogram_summary("q_values_hist", self.predictions, collections=['summ'])
         tf.scalar_summary("max_q_value", tf.reduce_max(self.predictions), collections=['summ'])
-        self.summaries = tf.merge_all_summaries(key='summ')
+        self.summaries = tf.merge_all_summaries(key='summ')'''
         
+        self.summaries = tf.summary.merge([ 
+            tf.summary.scalar("loss", self.loss), 
+            tf.summary.histogram("loss_hist", self.losses), 
+            tf.summary.histogram("q_values_hist", self.predictions), 
+            tf.summary.scalar("max_q_value", tf.reduce_max(self.predictions))
+        ])
 
     def predict(self, sess, s, keep_prob = 1):
         """
@@ -154,7 +182,13 @@ class Estimator():
         """
             
         conv1, conv2, conv3 = sess.run([self.conv1, self.conv2, self.conv3], { self.X_pl: s })
-        plotNNFilter(conv1)
+        if layer == '1':
+            return conv1
+        elif layer =='2':
+            return conv2
+        elif layer == '3':
+            return conv3
+        
 
         
 
@@ -176,6 +210,8 @@ class Estimator():
             [self.summaries, tf.contrib.framework.get_global_step(), self.train_op, self.loss],
             feed_dict)
         if self.summary_writer:
+            # Old API for using on cluster
+            # self.summary_writer.add_summary(summaries, global_step.eval())
             self.summary_writer.add_summary(summaries, global_step)
         return loss
 

@@ -191,7 +191,7 @@ def writting_files(xml_dir, dest_dir, percentage):
                 print('train{0}_target.npz and train{0}_input.npz are being written ...'.format(files_counter))
                 np.savez_compressed(dest_dir + 'train{0}_input.npz'.format(files_counter), train_input)
                 np.savez_compressed(dest_dir + 'train{0}_target.npz'.format(files_counter), train_target)
-                print("Files are written. It's done. PLease keep waiting ...")
+                print("Files are written. It's done. PLease keep waitting ...")
 
                 files_counter = files_counter + 1
                 train_counter = 0
