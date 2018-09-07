@@ -411,8 +411,6 @@ def DQL(num_episodes,
                     f.write("Episode Reward: {} Episode Length: {}".format(r, t))
 
 
-		break
-
 
     f.close()
     print "number of correct located objects:{}".format(num_located)

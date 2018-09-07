@@ -15,7 +15,7 @@ if __name__== "__main__":
 
 
     parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter)
-    parser = argparse.ArgumentParser(description='Train an object localizer')
+    parser = argparse.ArgumentParser(description='Visualizing CNN layers')
 
     parser.add_argument('-m','--model_name', type=str, default='default_model', help='The model parameters that will be loaded for testing. The model should be placed in ../experiments/model_name. Default: default_model')
     parser.add_argument('-i','--image_path', type=str, default=None, help='Path to an image.')
