@@ -5,16 +5,16 @@ The aim of this project is to learn a policy to localize objects in images by tu
 
 <div class="row" align="center">
   <div class="column" align="center">
-    <img src="https://drive.google.com/uc?export=view&id=1ltFxscM09914lkmUfxqA_ghebhzbgQwc" width="400px" />
-  </div>
-  <div class="column" align="center">
-    <img src="https://drive.google.com/uc?export=view&id=1fOxw7x2QP_DXGktlGQ5Y5XQaPrGQrzfi" width="400px" />
+    <img src="https://drive.google.com/uc?export=view&id=1QsOi-zVPicMfMej0OfFBV52cDQKGJbEh" width="900px" />
   </div>
 </div>
 
 # Getting started
 
 You can clone this project using this [link](https://github.com/otoofim/ObjLocalisation.git) and install requierments by `pip install -r requirements.txt`. Despite `requirements.txt`, it is required  to installe Tensorflow. The code works fine for the latest version of Tensorflow. However, in order to run the code on cluster it requires some changes. In the file `DNN.py` the parts of the code that needs to be modified in order to run on GPU cluster is marked as Old API. In this way the code can run with the older Tensorflow APIs. It is recommended to follow [this tutorial](https://www.tensorflow.org/install/install_linux)  to create a virtual environment and then install Tensorflow and all requirements within that. This code was developed and tested on Ubuntu 16.04 using Python 2.7.12 and Tensorflow 1.8.
+
+
+
 
 ## Inputs
 
