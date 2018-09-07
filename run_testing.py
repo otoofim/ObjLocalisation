@@ -22,16 +22,17 @@ if __name__== "__main__":
     parser.add_argument('-m','--model_name', type=str, default='default_model', help='The trained model would be saved with this name under the path ../experiments/model_name. Default: default_model')
 
 
-    f = open("../experiments/{}/report/evaluate_{}.txt".format(args.model_name, args.category), 'w')
+
     args = parser.parse_args()
+    f = open("../experiments/{}/report/evaluate_{}.txt".format(args.model_name, args.category), 'w')
     MAP = []
     for category in args.category:
 	print "{} images are being evaluated... \n\n\n\n".format(category)
         MAP.append(DQL_testing(args.num_episodes,
             category,
             args.model_name))
-        f.write("Precision for {} category: {}\n".format(category, MAP.append[-1]))
+        f.write("Precision for {} category: {}\n".format(category, MAP[-1]))
     
-    f.write("MAP over the given category(s): {}\n".format(np.mean(MAP))
+    f.write("MAP over the given category(s): {}\n".format(np.mean(MAP)))
     print "MAP over the given category(s): {}".format(np.mean(MAP))
     f.close()

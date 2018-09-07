@@ -114,7 +114,7 @@ There are two other python files that are useful for visualization purposes. `ru
             -n NAME, --name NAME  Name of the output file. It will be stored in
                         ../experiments/model_name/anim/
  
- In addition, the neural network layers can be visualized using `run_visulazing_layers.py`:
+In addition, the neural network layers can be visualized using `run_visulazing_layers.py`:
  
  
             usage: run_visulazing_layers.py [-h] [-m MODEL_NAME] [-i IMAGE_PATH]
@@ -133,6 +133,7 @@ There are two other python files that are useful for visualization purposes. `ru
               -ln LAYER_NUM, --layer_num LAYER_NUM
                         Layer number you wish to visualize.
  
+**Note:** In all visualization and evaluation files the best model saved in the directory of the given model is used. 
 
 ## Outputs
 
