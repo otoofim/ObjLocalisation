@@ -3,6 +3,14 @@ import VOC2012DataProvider
 
 
 def giveData(which_set, batch_size):
+    """
+    Reads .npz files
+    Args:
+       which_set: This indicates whether training or testing set needs to be loaded
+       batch_size: Batch size
+    Returns:
+       A batch of images
+    """
     if which_set == 'train':
 	for i in range(1,4):
 		print "input file {} is loading...".format(i)
@@ -14,8 +22,23 @@ def giveData(which_set, batch_size):
 
 
 def extractData(objClassName, which_set, batch_size):
+    """
+    Reads dataset 
+    Args:
+      objClassName: Object category that is needed
+      which_set: This indicates whether training or testing set needs to be loaded
+      batch_size: Batch size
+    Returns:
+      Image and its ground truth from the given category
+    """
+ 
+    # Loading .npz files
     for fileInp in giveData(which_set, batch_size):
+
+        # Getting images batch in the current file
         for img_batch, targ_batch in fileInp:
+
+            # Iterating over the current batch
             for batch_index, _ in enumerate(img_batch):
                 xmin = []
                 xmax = []
@@ -23,8 +46,11 @@ def extractData(objClassName, which_set, batch_size):
                 ymax = []
 		objectName = ''
                 found = False
+
+                # Iterates over objects in the current image
                 for objInd, objName in enumerate(targ_batch[batch_index]['objName']):
 
+		    # Checks whether the desired object exist in the loaded image
                     if (objName in objClassName) or ('*' in objClassName):
                         xmin.append(targ_batch[batch_index]['xmin'][objInd])
                         ymin.append(targ_batch[batch_index]['ymin'][objInd]) 

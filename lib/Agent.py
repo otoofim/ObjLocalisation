@@ -1,6 +1,3 @@
-# coding: utf-8
-
-
 import numpy as np
 from PIL import Image
 import matplotlib.pyplot as plt
@@ -8,6 +5,8 @@ import matplotlib.patches as patches
 import time
 import cv2 as cv
 import random
+from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
+from matplotlib.figure import Figure
 
 
 
@@ -24,10 +23,10 @@ ASPECT_RATIO_DOWN  = 7
 SPLIT_HORIZONTAL   = 8
 SPLIT_VERTICAL     = 9
 PLACE_LANDMARK     = 10
-SKIP_REGION        = 11
 
 
 
+# Transformation coefficients
 DIMENSION = 84
 STEP_FACTOR = 0.2
 MAX_ASPECT_RATIO = 6.00
@@ -38,47 +37,35 @@ MIN_BOX_SIDE     = 10
 
 
 class ObjLocaliser(object):
+    """
+    Object localizer agent
+    """
 
     def __init__(self, image, boundingBoxes):
 
-        #Loading image using PIL librarry to resize it to standard dimention which is acceptable by the network
-        #PILimg = Image.fromarray(image)
         PILimg = image
-        #Resizing the image to be compatible to the network
+        # Resizing the image to be compatible with the network
         resized_img = cv.resize(PILimg,(DIMENSION,DIMENSION))
-        #Image is stored as np array
+        # Image is stored as np array
         self.image_playground = np.array(resized_img)
+	# Computing the scale for transforming bounding boxes
         self.yscale = float(DIMENSION)/image.shape[0]
         self.xscale = float(DIMENSION)/image.shape[1]
+	# Loading all ground truth to be used for computing IoU
         self.targets = self.gettingTargerReady(boundingBoxes)
 
-        #Initializing sliding window from top left corner of the image
+        # Initializing sliding window from top left corner to the bottom right corner
         self.agent_window = np.array([0,0,DIMENSION,DIMENSION])
         self.iou = 0
-        #self.memory_replay = []
-        #self.memorySize = memorySize
-        #self.batch_size = batch_size
 
-
-
-        self.actoins = {
-            0: 'MOVE_RIGHT',
-            1: 'MOVE_DOWN',
-            2: 'SCALE_UP',
-            3: 'ASPECT_RATIO_UP',
-            4: 'MOVE_LEFT',
-            5: 'MOVE_UP',
-            6: 'SCALE_DOWN',
-            7: 'ASPECT_RATIO_DOWN',
-            8: 'SPLIT_HORIZONTAL',
-            9: 'SPLIT_VERTICAL',
-            10: 'PLACE_LANDMARK',
-            11: 'SKIP_REGION'
-        }
-
-
-
+ 
     def Reset(self,image):
+	"""
+	Reset the agent window to the initial situation to prepare it for a new episode
+	Args: 
+	image: The image that the ageny is going to interact with
+	"""
+
         self.agent_window = np.array([0,0,DIMENSION,DIMENSION])
         PILimg = image
         resized_img = cv.resize(PILimg,(DIMENSION,DIMENSION))
@@ -86,51 +73,41 @@ class ObjLocaliser(object):
 
 
     def gettingTargerReady(self, boundingBoxes):
+	"""
+	Loading bounding boxes for an image. They are organized with this format [xmin, ymin, xmax, ymax]
+	Args:
+	boundingBoxes: A dictionary of boudong boxes
+	returns:
+	A list of bounding boxes
+	"""
+
         numOfObj = len(boundingBoxes['xmax'])
         objs = []
         for i in range(numOfObj):
             temp = [boundingBoxes['xmin'][i]*self.xscale, boundingBoxes['ymin'][i]*self.yscale, boundingBoxes['xmax'][i]*self.xscale, boundingBoxes['ymax'][i]*self.yscale]
             objs.append(temp)
         return objs
-
+ 
     def wrapping(self):
-
-        #Pick selected window from image
+	"""
+	Resizing the agent current window to be compatible for the network. The window is resized to 84X84. It can be altered by DIMENSION variable
+	Returns:
+	The resized current window
+	"""
         im2 = self.image_playground[self.agent_window[1]:self.agent_window[3],self.agent_window[0]:self.agent_window[2]]
-        #Resizing the agent window to be compatible for network input
-        #resized = Image.fromarray(im2).resize((DIMENSION,DIMENSION))
         resized = cv.resize(im2,(DIMENSION,DIMENSION))
-        #resized = np.stack((resized[:,:,0],resized[:,:,1],resized[:,:,2],self.image_playground[:,:,0],self.image_playground[:,:,1],self.image_playground[:,:,2]), axis=2)
-
         return resized
-
-
-    """def pushingToMemory(self, s1, s2, rew, act):
-
-        if len(self.memory_replay) < self.memorySize:
-            self.memory_replay.append([s1, s2, rew, act])
-        else:
-            del self.memory_replay[0]
-            self.memory_replay.append([s1, s2, rew, act])
-
-    def sampleBatch(self):
-
-        s1 = []
-        s2 = []
-        rew = []
-        act = []
-
-        for i in sorted(random.sample(xrange(len(self.memory_replay)), self.batch_size)):
-            s1.append(self.memory_replay[i][0])
-            s2.append(self.memory_replay[i][1])
-            rew.append(self.memory_replay[i][2])
-            act.append(self.memory_replay[i][3])
-
-        return s1, s2, rew, act"""
 
 
 
     def takingActions(self,action):
+	"""
+	This function performs actions and computes the new window and its reward
+	Args:
+	action: Action that is going to be taken
+	Returns: 
+	Reward corrsponding to the taken action
+	"""
 
         newbox = np.array([0,0,0,0])
         termination = False
@@ -157,20 +134,24 @@ class ObjLocaliser(object):
         elif action == PLACE_LANDMARK:
             newbox = self.placeLandmark()
             termination = True
-        #elif action == SKIP_REGION:
-            #self.skipRegion()
 
+	# Storing new window
         self.agent_window = newbox
+	# Cheching whether the new window is out of boundaries
         self.adjustAndClip()
+        # computing the reward and IoU corresponding to the taken action
         r, new_iou = self.ComputingReward(self.agent_window, termination)
         self.iou = new_iou
 
         return r
 
 
-
-
     def MoveRight(self):
+	"""
+	Action moving right
+	Returns:
+	New window
+	"""
 
         newbox = np.copy(self.agent_window)
         boxW = newbox[2] - newbox[0]
@@ -186,9 +167,13 @@ class ObjLocaliser(object):
         return newbox
 
 
-
+   
     def MoveDown(self):
-
+	"""
+	Action moving down
+	Returns:
+	New window
+	"""
         newbox = np.copy(self.agent_window)
         boxH = newbox[3] - newbox[1]
         step = STEP_FACTOR * boxH
@@ -204,9 +189,12 @@ class ObjLocaliser(object):
 
 
 
-
-
     def scaleUp(self):
+	"""
+	Action scaling up
+	Returns:
+	New window
+	"""
 
         newbox = np.copy(self.agent_window)
         boxW = newbox[2] - newbox[0]
@@ -236,9 +224,12 @@ class ObjLocaliser(object):
         return newbox
 
 
-
-
     def aspectRatioUp(self):
+	"""
+	Action increasing aspect ratio
+	Returns:
+	New window
+	"""
 
         newbox = np.copy(self.agent_window)
         boxH = newbox[3] - newbox[1]
@@ -267,8 +258,12 @@ class ObjLocaliser(object):
         return newbox
 
 
-
     def MoveLeft(self):
+	"""
+	Action moving left
+	Returns:
+	New window
+	"""
 
         newbox = np.copy(self.agent_window)
         boxW = newbox[2] - newbox[0]
@@ -284,8 +279,12 @@ class ObjLocaliser(object):
 
         return newbox
 
-
     def MoveUp(self):
+	"""
+	Action moving up
+	Returns:
+	New window
+	"""
 
         newbox = np.copy(self.agent_window)
 
@@ -304,6 +303,11 @@ class ObjLocaliser(object):
 
 
     def scaleDown(self):
+	"""
+	Action moving down
+	Returns:
+	New window
+	"""
 
         newbox = np.copy(self.agent_window)
 
@@ -333,8 +337,12 @@ class ObjLocaliser(object):
         return newbox
 
 
-
     def splitHorizontal(self):
+	"""
+	Action horizontal splitting
+	Returns:
+	New window
+	"""
 
         newbox = np.copy(self.agent_window)
         boxW = newbox[2] - newbox[0]
@@ -343,8 +351,13 @@ class ObjLocaliser(object):
             newbox[2] -= half
         return newbox
 
-
+   
     def splitVertical(self):
+	"""
+	Action vertical splitting
+	Returns:
+	New window
+	"""
 
         newbox = np.copy(self.agent_window)
         boxH = newbox[3] - newbox[1]
@@ -353,8 +366,13 @@ class ObjLocaliser(object):
             newbox[3] -= half
         return newbox
 
-
+ 
     def aspectRatioDown(self):
+	"""
+	Action decreasing aspect ratio
+	Returns:
+	New window
+	"""
 
         newbox = np.copy(self.agent_window)
 
@@ -380,7 +398,13 @@ class ObjLocaliser(object):
 
         return newbox
 
+    
     def placeLandmark(self):
+	"""
+	Termination action. This action returns the last window without any changes however for visualization purposes a black cross sign is put on the image to detemine search termination
+	Returns:
+	New window
+	"""
 
         newbox = np.copy(self.agent_window)
 
@@ -397,8 +421,10 @@ class ObjLocaliser(object):
 
 
 
-
     def adjustAndClip(self):
+	"""
+	Cheching whether the new window is out of boundaries
+	"""
 
         #Cheching if x coordinate of the top left corner is out of bound
         if self.agent_window[0] < 0:
@@ -452,11 +478,18 @@ class ObjLocaliser(object):
             else:
                 self.agent_window[1] = self.agent_window[1] - MIN_BOX_SIDE
 
-
+    
     def intersectionOverUnion(self, boxA, boxB):
+	"""
+	Computing IoU
+	Args:
+	boxA: First box
+	boxB: Second box
+	Returns:
+	IoU for the given boxes
+	"""
 
         # determine the (x, y)-coordinates of the intersection rectangle
-        #boxA = self.agent_window
         xA = max(boxA[0], boxB[0])
         yA = max(boxA[1], boxB[1])
         xB = min(boxA[2], boxB[2])
@@ -478,40 +511,47 @@ class ObjLocaliser(object):
         # return the intersection over union value
         return iou
 
-
+    
     def ComputingReward(self, agent_window, termination = False):
+	"""
+	Going over the all bounding boxes to compute the reward for a given action.
+	Args: 
+	agent_window: Current agent window
+	termination: Is this termination action?
+	Returns:
+	Reward and IoU coresponding to the agent window
+	"""
+
 	max_iou = -2
 	reward = 0
-        for target in self.targets: #for checking all objs change [self.targets[0]] ---> self.targets
+        # Going over all the bounding boxes and return the reward corresponding to the closest object
+        for target in self.targets:
+            # Computing IoU between agent window and ground truth
             new_iou = self.intersectionOverUnion(agent_window, np.array(target))
 	    if new_iou > max_iou:
 		max_iou = new_iou
             	reward = self.ReturnReward(new_iou, termination)
-            #if reward > 0:
-                #break
         if termination: max_iou = 0
         return reward, max_iou
 
-    """def ComputingReward(self, agent_window, termination = False):
-	new_iou = 0
-	reward = 0
-        for target in self.targets: #for checking all objs change [self.targets[0]] ---> self.targets
-            new_iou = self.intersectionOverUnion(agent_window, np.array(target))
-            reward = self.ReturnReward(new_iou, termination)
-            if reward > 0:
-                break
-        if termination: new_iou = 0
-        return reward, new_iou"""
-
-
+ 
     def ReturnReward(self,new_iou, termination):
+	"""
+	Computing reward regarding new window
+	Args:
+	new_iou: new IoU corresponding to the recent action
+	termination: Is this termination action?
+	Returns: 
+	Reward corresponding to the action
+	"""
         reward = 0
-
+	# If new IoU is bigger than the last IoU the agent will be recieved positive reward
         if new_iou - self.iou > 0:
             reward = 1
         else:
             reward = -1
 
+        # If the action is the trigger then the new IoU will compare to the threshold 0.5 
         if termination:
 
             if (new_iou > 0.5):
@@ -523,32 +563,29 @@ class ObjLocaliser(object):
 
 
     def drawActions(self):
+	"""
+	This function is to show the image with bounding boxes and the agent current window 
+	"""
 
-        # Create figure and axes
         fig,ax = plt.subplots(1)
-
-        # Display the image
         ax.imshow(self.image_playground)
         
-        # Drawing agent window
         rect = patches.Rectangle((self.agent_window[0],self.agent_window[1]),self.agent_window[2]-self.agent_window[0],self.agent_window[3]-self.agent_window[1],linewidth=1,edgecolor='r',facecolor='none')
         ax.add_patch(rect)
 
-        # Drawing target objects bouning boxes
         for target in self.targets:
             rect2 = patches.Rectangle((target[0],target[1]),target[2]-target[0],target[3]-target[1],linewidth=1,edgecolor='b',facecolor='none')
             ax.add_patch(rect2)
 
-
-
-        # Add the patch to the Axes
         plt.draw()
         plt.show()
         
-        
+
+   
     def my_draw(self):
-        from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
-        from matplotlib.figure import Figure
+        """
+	This function is used by DQL_visualization_actions.py to make video from sequence of actions        
+        """
         
         fig = Figure()
         canvas = FigureCanvas(fig)
@@ -556,76 +593,19 @@ class ObjLocaliser(object):
        
         ax.imshow(self.image_playground)
         
-        # Drawing agent window
         rect = patches.Rectangle((self.agent_window[0],self.agent_window[1]),self.agent_window[2]-self.agent_window[0],self.agent_window[3]-self.agent_window[1],linewidth=1,edgecolor='r',facecolor='none')
         ax.add_patch(rect)
 
-        # Drawing target objects bouning boxes
         for target in [self.targets[0]]:
             rect2 = patches.Rectangle((target[0],target[1]),target[2]-target[0],target[3]-target[1],linewidth=1,edgecolor='b',facecolor='none')
             ax.add_patch(rect2)
             
-        canvas.draw()       # draw the canvas, cache the renderer
+        canvas.draw()   
         
         width, height = fig.get_size_inches() * fig.get_dpi()
 
         return np.fromstring(canvas.tostring_rgb(), dtype='uint8').reshape(int(height), int(width), 3)
         
 
-    def smartExploration(self):
 
-        action_set = []
-        newbox = self.MoveRight()
-        r, _ = self.ComputingReward(newbox)
-        if r>0:
-            action_set.append(0)
-        newbox = self.MoveDown()
-        r, _ = self.ComputingReward(newbox)
-        if r>0:
-            action_set.append(1)
-        newbox = self.scaleUp()
-        r, _ = self.ComputingReward(newbox)
-        if r>0:
-            action_set.append(2)
-        newbox = self.aspectRatioUp()
-        r, _ = self.ComputingReward(newbox)
-        if r>0:
-            action_set.append(3)
-        newbox = self.MoveLeft()
-        r, _ = self.ComputingReward(newbox)
-        if r>0:
-            action_set.append(4)
-        newbox = self.MoveUp()
-        r, _ = self.ComputingReward(newbox)
-        if r>0:
-            action_set.append(5)
-        newbox = self.scaleDown()
-        r, _ = self.ComputingReward(newbox)
-        if r>0:
-            action_set.append(6)
-        newbox = self.aspectRatioDown()
-        r, _ = self.ComputingReward(newbox)
-        if r>0:
-            action_set.append(7)
-        newbox = self.splitHorizontal()
-        r, _ = self.ComputingReward(newbox)
-        if r>0:
-            action_set.append(8)
-        newbox = self.splitVertical()
-        r, _ = self.ComputingReward(newbox)
-        if r>0:
-            action_set.append(9)
-        newbox = self.agent_window
-        r, _ = self.ComputingReward(newbox)
-        if r>0:
-            action_set.append(10)
-        act = 0
-
-        if len(action_set) < 1:
-            act = np.random.randint(11, size=1)[0]
-        else:
-            ind = (random.sample(xrange(len(action_set)), 1))[0]
-            act = action_set[ind]
-
-        return act
 

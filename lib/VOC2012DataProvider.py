@@ -158,7 +158,7 @@ class PascalDataProvider(DataProvider):
 
         # construct path to data using os.path.join to ensure the correct path
         # separator for the current platform / OS is used
-        # Pa should point to the data directory
+        # Path should point to the data directory
         data_path = os.path.join("", '../data/{0}{1}_input.npz'.format(which_set, fileNumb))
         assert os.path.isfile(data_path), ('Data file does not exist at expected path: ' + data_path)
         # load data from compressed numpy file
@@ -170,9 +170,6 @@ class PascalDataProvider(DataProvider):
         # pass the loaded data to the parent class __init__
         super(PascalDataProvider, self).__init__(
             inputs, targets, batch_size, max_num_batches, shuffle_order, rng)
-
-
-
 
 
     def next(self):

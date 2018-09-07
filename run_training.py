@@ -1,24 +1,11 @@
-#import itertools
-#import numpy as np
 import os
-#import random
 import sys
-#import psutil
-#import tensorflow as tf
-#from PIL import Image
-#import matplotlib.pyplot as plt
 import argparse
-#plt.switch_backend('agg')
+
 
 if "./lib" not in sys.path:
     sys.path.append("./lib")
 
-#import plotting
-#from collections import deque, namedtuple
-#from readingFileEfficiently import *
-#import VOC2012_npz_files_writter
-#from DNN import *
-#from Agent import ObjLocaliser
 from DQL import *
 
 

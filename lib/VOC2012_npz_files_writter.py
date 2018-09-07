@@ -14,9 +14,14 @@ import gzip
 DEFAULT_SEED = 123456
 
 
-
-#This function assigns a specific digit to every class of objects.
 def class_text_to_int(row_label):
+    """
+    This function assigns a specific digit to every class of objects.
+    Args: 
+       row_label: label
+    Returns:  
+       Digit corresponding to the label
+    """
 
     switcher = {
 
@@ -49,15 +54,28 @@ def class_text_to_int(row_label):
         raise ValueError('The class is not defined: {0}'.format(row_label))
 
 
-#Converting an image to string
 def load_image(addr):
+    """
+    Converting an image to string
+    Args:
+       addr: Address to an image
+    Returns:
+       Converted image to string
+    """
 
     img = np.array(Image.open(addr))
     return img.tostring()
 
 
-#Creating a dict from datapoints
+
 def create_example(xml_file):
+    """
+    Creating a dict from datapoints
+    Args: 
+      xml_file: Path to xml file
+    Returns:
+      Record corresponding to an image including image and its ground truth
+    """
 
     #Loading xml file
     tree = ET.parse(xml_file)
@@ -130,8 +148,8 @@ def create_example(xml_file):
                 'xmax': xmax,
                 'ymin': ymin,
                 'ymax': ymax,
+                'classes': classes_text
                 # The following features are unnecessay for this task but they can be uncommented for other purposes.
-                'classes': classes_text,
                 #'label': classes,
                 #'difficult': difficult_obj,
                 #'truncated': int64_list_feature(truncated),
@@ -142,8 +160,14 @@ def create_example(xml_file):
     return example
 
 
-#Creating .npz files
-def writting_files(xml_dir, dest_dir, percentage):
+
+def writting_files(xml_dir, dest_dir):
+    """
+    Creating .npz files
+    Args:
+      xml_dir: Path to xml file
+      dest_dir: Destination that .npz files are wrriten
+    """
 
     i=1
     tst=0   #to count number of images for evaluation
@@ -160,10 +184,10 @@ def writting_files(xml_dir, dest_dir, percentage):
 
     print("Reading dataset is started. Please wait it might take several minutes to create .npz files ...")
     for xml_file in  glob.glob(xml_dir):
-        #Create a tfrecord
+        # Create a tfrecord
         example = create_example(xml_file)
 
-        #each 10th file (xml and image) write it for test
+        # Every 5th file (xml and image) is writen for test set
         if (i%5)==0:
 
             temp = {'image_height':example['image_height'], 'image_width':example['image_width'], 'image_depth':example['image_depth'], 'image':example['image'], 'image_filename':example['image_filename']}

@@ -1,51 +1,22 @@
 import numpy as np
 import os
-import random
 import sys
-import psutil
 import tensorflow as tf
-from collections import deque, namedtuple
-import matplotlib.pyplot as plt
-import math
-import matplotlib as mp
-from retinavision.retina import Retina
-from retinavision.cortex import Cortex
-from retinavision import datadir, utils
 import cv2
 from os.path import join
 
 
-# Atari Actions: 0 (right), 1 (down), 2 (scale up), 3 (aspect ratio up), 4 (left), 5 (up), 6 (scale down), 7 (aspect ratio down), 8 (split horizontal), 9 (split vetical), and 10 (termination) are valid actions
+# Agent Actions: 0 (right), 1 (down), 2 (scale up), 3 (aspect ratio up), 4 (left), 5 (up), 6 (scale down), 7 (aspect ratio down), 8 (split horizontal), 9 (split vetical), and 10 (termination) are valid actions
 
 VALID_ACTIONS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
 
-
-
 class StateProcessor():
     """
-    Processes a raw Atari images. Resizes it and converts it to grayscale.
+    Processes raw images. Resizes it and converts it to grayscale.
     """
     def __init__(self):
 
-        '''self.R = Retina()
-        self.R.info()
-        self.R.loadLoc(join(datadir, "retinas", "ret50k_loc.pkl"))
-        self.R.loadCoeff(join(datadir, "retinas", "ret50k_coeff.pkl"))
-            
-        #Prepare retina
-        x = 84/2
-        y = 84/2
-        fixation = (y,x)
-        self.R.prepare((84,84,3), fixation)
-
-        #Create and prepare cortex
-        self.C = Cortex()
-        lp = join(datadir, "cortices", "50k_Lloc_tight.pkl")
-        rp = join(datadir, "cortices", "50k_Rloc_tight.pkl")
-        self.C.loadLocs(lp, rp)
-        self.C.loadCoeffs(join(datadir, "cortices", "50k_Lcoeff_tight.pkl"), join(datadir, "cortices", "50k_Rcoeff_tight.pkl"))
-        '''
         # Build the Tensorflow graph
         with tf.variable_scope("state_processor"):
             self.input_state = tf.placeholder(shape=[84, 84, 3], dtype=tf.uint8)
@@ -53,22 +24,15 @@ class StateProcessor():
             self.output = tf.image.resize_images(self.output, [84, 84], method=tf.image.ResizeMethod.NEAREST_NEIGHBOR)
             self.output = tf.squeeze(self.output)
 
-    def process(self, sess, state, retina=False):
+    def process(self, sess, state):
         """
         Args:
             sess: A Tensorflow session object
-            state: A [210, 160, 3] Atari RGB State
+            state: A [X, Y, Z] image RGB State
 
         Returns:
             A processed [84, 84] state representing grayscale values.
         """
-        if retina:
-
-            state = cv2.cvtColor(state, cv2.COLOR_BGR2GRAY)
-            V = self.R.sample(state, self.fixation)
-            #tight = R.backproject_tight_last()
-            tight = self.R.backproject_last()
-            state = self.C.cort_img(V)
         
         return sess.run(self.output, { self.input_state: state })
 
@@ -91,7 +55,8 @@ class Estimator():
                 summary_dir = os.path.join(summaries_dir, "summaries_{}".format(scope))
                 if not os.path.exists(summary_dir):
                     os.makedirs(summary_dir)
-                self.summary_writer = tf.summary.FileWriter(summary_dir) # Old API: tf.train.SummaryWriter
+		# Old API: tf.train.SummaryWriter. It might be needed to use on GPU cluster
+                self.summary_writer = tf.summary.FileWriter(summary_dir) 
 
     def _build_model(self):
         """
@@ -99,7 +64,7 @@ class Estimator():
         """
 
         # Placeholders for our input
-        # Our input are 4 RGB frames of shape 160, 160 each
+        # Our input are 4 RGB frames of shape 84, 84 each
         self.X_pl = tf.placeholder(shape=[None, 84, 84, 4], dtype=tf.uint8, name="X")
         # The TD target value
         self.y_pl = tf.placeholder(shape=[None], dtype=tf.float32, name="y")
@@ -110,7 +75,9 @@ class Estimator():
         X = tf.to_float(self.X_pl) / 255.0
         batch_size = tf.shape(self.X_pl)[0]
 
-        # Three convolutional layers
+        # Three convolutional layers 
+	# To change the neural network architecture this part should be modified
+	# Note if you wish to change the architecture you need to modify visulize_layers function as well 
         conv1 = tf.contrib.layers.conv2d(
             X, 32, 8, 4, activation_fn=tf.nn.relu)
         conv2 = tf.contrib.layers.conv2d(
@@ -141,7 +108,7 @@ class Estimator():
         self.train_op = self.optimizer.minimize(self.loss, global_step=tf.contrib.framework.get_global_step())
         # Summaries for Tensorboard
         
-        # Old APIs for using on cluster
+        # Old APIs for using on GPU cluster
         '''tf.scalar_summary("loss", self.loss, collections=['summ'])
         tf.histogram_summary("loss_hist", self.losses, collections=['summ'])
         tf.histogram_summary("q_values_hist", self.predictions, collections=['summ'])
@@ -173,14 +140,16 @@ class Estimator():
     def visulize_layers(self, sess, s, layer):
 
         """
-        Predicts action values.
+        Returns Conv layers filters for visulazation purposes
 
         Args:
           sess: Tensorflow session
           s: State input of shape [batch_size , 80, 80, 4]
-
-        """
-            
+	  layer: Layer number which is desired to visualize
+	
+	Returns:
+	  A conv layer of shape [4, 84, 84, filter_num]
+        """ 
         conv1, conv2, conv3 = sess.run([self.conv1, self.conv2, self.conv3], { self.X_pl: s })
         if layer == '1':
             return conv1
@@ -198,9 +167,10 @@ class Estimator():
 
         Args:
           sess: Tensorflow session object
-          s: State input of shape [batch_size, 4, 160, 160, 3]
+          s: State input of shape [batch_size, 84, 84, 4]
           a: Chosen actions of shape [batch_size]
           y: Targets of shape [batch_size]
+          keep_prob: Dropout probability of keeping neurons
 
         Returns:
           The calculated loss on the batch.
@@ -258,18 +228,27 @@ def make_epsilon_greedy_policy(estimator, nA):
     Creates an epsilon-greedy policy based on a given Q-function approximator and epsilon.
 
     Args:
-        estimator: An estimator that returns q values for a given state
-        nA: Number of actions in the environment.
-
+      estimator: An estimator that returns q values for a given state
+      nA: Number of actions in the environment.
     Returns:
-        A function that takes the (sess, observation, epsilon) as an argument and returns
-        the probabilities for each action in the form of a numpy array of length nA.
+       A policy for a given estimator
 
     """
     def policy_fn(sess, observation, epsilon):
+        """
+        Predicts Q values and gives probability distribution over actions
+        
+        Args:
+          sess: Tensorflow session object
+          observation: State input of shape [84, 84, 4]
+          epsilon: Probability of taking actions rendomly
+
+        Returns:
+          the probabilities for every action in the form of a numpy array of length nA.
+
+        """
         A = np.ones(nA, dtype=float) * epsilon / nA
         q_values = estimator.predict(sess, np.expand_dims(observation, 0))[0]
-	#print "q:{}".format(q_values) 
         best_action = np.argmax(q_values)
         A[best_action] += (1.0 - epsilon)
         return A, q_values

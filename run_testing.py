@@ -28,4 +28,4 @@ if __name__== "__main__":
         map.append(DQL_testing(args.num_episodes,
             category,
             args.model_name))
-    print "MAP over the given category(es): {}".format(np.mean(map))
+    print "MAP over the given category(s): {}".format(np.mean(map))
