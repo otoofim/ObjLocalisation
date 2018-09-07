@@ -152,3 +152,8 @@ The output of this file is a short video shows the agent interactions with the g
 
 The output of this script is a set of images each of which corresponds to a filter in a given layer. The result is stored in `../experiments/ModelName/visu`. 
 
+# Acknowledgments
+This code is implemented by getting help from the following sources:
+- [Original implementation of active object localization algorithm](https://github.com/jccaicedo/localization-agent)
+- [Tutorial for deep reinforcement learning](https://github.com/dennybritz/reinforcement-learning)
+- [Tutorial for deep learning from the university of Edinburgh](https://github.com/otoofim/mlpractical)
