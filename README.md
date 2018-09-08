@@ -68,7 +68,7 @@ Having set up the environment, training can begin using `run_training.py`. Its c
                         the path ../experiments/model_name. Default:
                         default_model
                         
-Note: If you need to train a model on multiple categories the command would be `python run_training.py -c cat dog`.                        
+Note: If you need to train a model on multiple categories the command would be `python run_training.py -c cat dog`. In addition, if you want to trian a new mdoel on top of a previously trained model then you need to copy the content of the bestModel folder of the previously trained model to its checkpoints folder. In this way, the best model will be loaded for training.                   
 
 To evaluate a trained model on the test set `run_testing.py` is used. Testing conditions can be set as below:
 
