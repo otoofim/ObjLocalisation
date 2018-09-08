@@ -30,9 +30,9 @@ def plotNNFilter(units, model_name, layer_num):
         os.makedirs('../experiments/{}/visu/layer_{}'.format(model_name, layer_num))
     
     for i in range(filters):
-	fig = plt.figure(1, figsize=(32,32))
+	fig = plt.figure(1, figsize=(10,10))
 	plt.imshow(units[0,:,:,i], interpolation="nearest", cmap="gray")
-        fig.suptitle('layer{} filter{}'.format(layer_num, i+1), fontsize=70)
+        fig.suptitle('layer{} filter{}'.format(layer_num, i+1), fontsize=60)
 	fig.savefig('../experiments/{}/visu/layer_{}/layer{}filter{}.png'.format(model_name,layer_num,layer_num, i+1))
 	plt.close()
 	print "filter {} is plotted.".format(i)
