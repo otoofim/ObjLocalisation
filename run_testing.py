@@ -18,8 +18,8 @@ if __name__== "__main__":
     parser = argparse.ArgumentParser(description='Evaluate a model on test set')
 
     parser.add_argument('-n','--num_episodes', type=int, default=15, help = "Number of episodes that the agent can interact with an image. Default: 15")
-    parser.add_argument('-c','--category', type=str, nargs='+', default=['cat'], help='Indicating the categories are going to be used for training. You can list name of the classes you want to use in testing. If you wish to use all classes then you can use *. For instnce <-c cat dog>. Default: cat')
-    parser.add_argument('-m','--model_name', type=str, default='default_model', help='The trained model would be saved with this name under the path ../experiments/model_name. Default: default_model')
+    parser.add_argument('-c','--category', type=str, nargs='+', default=['cat'], help='Indicating the categories are going to be used for testing. You can list name of the classes you want to use in testing, for instnce <-c cat dog>. If you wish to use all classes then you can use *. Default: cat')
+    parser.add_argument('-m','--model_name', type=str, default='default_model', help='The model name that will be loaded for evaluation. Do not forget to put the model under the path ../experiments/model_name. Default: default_model')
 
 
 

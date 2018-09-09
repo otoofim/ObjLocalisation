@@ -27,7 +27,7 @@ def DQL_testing(num_episodes, category, model_name):
     destination = "../data/"
     if not (os.path.isfile(destination+"test_input.npz") or os.path.isfile(destination+"test_target.npz")):
         print("Files are not ready!!!")
-        return
+        return 0
     else:
         print("Records are already prepared!!!")
 

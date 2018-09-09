@@ -72,66 +72,67 @@ Note: If you need to train a model on multiple categories the command would be `
 
 To evaluate a trained model on the test set `run_testing.py` is used. Testing conditions can be set as below:
 
-          usage: run_testing.py [-h] [-n NUM_EPISODES] [-c CATEGORY [CATEGORY ...]]
-                      [-m MODEL_NAME]
+	usage: run_testing.py [-h] [-n NUM_EPISODES] [-c CATEGORY [CATEGORY ...]]
+			      [-m MODEL_NAME]
 
-          Evaluate a model on test set
+	Evaluate a model on test set
 
-          optional arguments:
-          -h, --help            show this help message and exit
-          -n NUM_EPISODES, --num_episodes NUM_EPISODES
-                        Number of episodes that the agent can interact with an
-                        image. Default: 15
-          -c CATEGORY [CATEGORY ...], --category CATEGORY [CATEGORY ...]
-                        Indicating the categories are going to be used for
-                        training. You can list name of the classes you want to
-                        use in testing. If you wish to use all classes then
-                        you can use *. For instnce <-c cat dog>. Default: cat
-          -m MODEL_NAME, --model_name MODEL_NAME
-                        The trained model would be saved with this name under
-                        the path ../experiments/model_name. Default:
-                        default_model
+	optional arguments:
+	  -h, --help            show this help message and exit
+	  -n NUM_EPISODES, --num_episodes NUM_EPISODES
+			        Number of episodes that the agent can interact with an
+			        image. Default: 15
+	  -c CATEGORY [CATEGORY ...], --category CATEGORY [CATEGORY ...]
+			        Indicating the categories are going to be used for
+			        testing. You can list name of the classes you want to
+			        use in testing, for instnce <-c cat dog>. If you wish
+			        to use all classes then you can use *. Default: cat
+	  -m MODEL_NAME, --model_name MODEL_NAME
+			        The model name that will be loaded for evaluation. Do
+			        not forget to put the model under the path
+			        ../experiments/model_name. Default: default_model
 
 There are two other python files that are useful for visualization purposes. `run_visulazing_actions.py` can be used to visualize a sequence of actions:
 
-          usage: run_visulazing_actions.py [-h] [-m MODEL_NAME] [-i IMAGE_PATH]
-                                 [-g GROUND_TRUTH [GROUND_TRUTH ...]]
-                                 [-n NAME]
+	usage: run_visulazing_actions.py [-h] [-m MODEL_NAME] [-i IMAGE_PATH]
+		                         [-g GROUND_TRUTH [GROUND_TRUTH ...]]
+		                         [-n NAME]
 
-          Visualizing sequence of actions
+	Visualizing sequence of actions
 
-          optional arguments:
-            -h, --help            show this help message and exit
-            -m MODEL_NAME, --model_name MODEL_NAME
-                        The model parameters that will be loaded for testing.
-                        The model should be placed in
-                        ../experiments/model_name. Default: default_model
-            -i IMAGE_PATH, --image_path IMAGE_PATH
-                        Path to an image.
-            -g GROUND_TRUTH [GROUND_TRUTH ...], --ground_truth GROUND_TRUTH [GROUND_TRUTH ...]
-                        Target coordinates. The order of coordinates should be
-                        like: xmin ymin xmax ymax. Default: 0 0 1 1
-            -n NAME, --name NAME  Name of the output file. It will be stored in
-                        ../experiments/model_name/anim/
+	optional arguments:
+	  -h, --help            show this help message and exit
+	  -m MODEL_NAME, --model_name MODEL_NAME
+		                The model parameters that will be loaded for testing.
+		                Do not forget to put the model under the path
+		                ../experiments/model_name. Default: default_model
+	  -i IMAGE_PATH, --image_path IMAGE_PATH
+		                Path to an image.
+	  -g GROUND_TRUTH [GROUND_TRUTH ...], --ground_truth GROUND_TRUTH [GROUND_TRUTH ...]
+		                Target coordinates. The order of coordinates should be
+		                like: xmin ymin xmax ymax. Default: 0 0 1 1
+	  -n NAME, --name NAME  Name of the output file. It will be stored in
+		                ../experiments/model_name/anim/
+
  
 In addition, the neural network layers can be visualized using `run_visulazing_layers.py`:
  
  
-            usage: run_visulazing_layers.py [-h] [-m MODEL_NAME] [-i IMAGE_PATH]
-                                [-ln LAYER_NUM]
+	usage: run_visulazing_layers.py [-h] [-m MODEL_NAME] [-i IMAGE_PATH]
+		                        [-ln LAYER_NUM]
 
-            Visualizing CNN layers
+	Visualizing CNN layers
 
-            optional arguments:
-              -h, --help            show this help message and exit
-              -m MODEL_NAME, --model_name MODEL_NAME
-                        The model parameters that will be loaded for testing.
-                        The model should be placed in
-                        ../experiments/model_name. Default: default_model
-              -i IMAGE_PATH, --image_path IMAGE_PATH
-                        Path to an image.
-              -ln LAYER_NUM, --layer_num LAYER_NUM
-                        Layer number you wish to visualize.
+	optional arguments:
+	  -h, --help            show this help message and exit
+	  -m MODEL_NAME, --model_name MODEL_NAME
+		                The model parameters that will be loaded for testing.
+		                Do not forget to put the model under the path
+		                ../experiments/model_name. Default: default_model
+	  -i IMAGE_PATH, --image_path IMAGE_PATH
+		                Path to an image.
+	  -ln LAYER_NUM, --layer_num LAYER_NUM
+		                Layer number you wish to visualize.
  
 **Note:** In all visualization and evaluation files the best model saved in the directory of the given model is used. 
 
