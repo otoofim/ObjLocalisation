@@ -408,10 +408,10 @@ class ObjLocaliser(object):
 
         newbox = np.copy(self.agent_window)
 
-        h = (newbox[3] - newbox[1])/2
-        h_l = h/5
-        w = (newbox[2] - newbox[0])/2
-        w_l = w/5
+        h = int((newbox[3] - newbox[1])/2)
+        h_l = int(h/5)
+        w = int((newbox[2] - newbox[0])/2)
+        w_l = int(w/5)
 
         self.image_playground[newbox[1]+h-h_l:newbox[1]+h+h_l,newbox[0]:newbox[2]] = 0
         self.image_playground[newbox[1]:newbox[3],newbox[0]+w-w_l:newbox[0]+w+w_l] = 0
