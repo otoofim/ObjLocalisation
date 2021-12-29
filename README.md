@@ -5,9 +5,10 @@ The aim of this project is to learn a policy to localize objects in images by tu
 
 <div class="row" align="center">
   <div class="column" align="center">
-    <img src="https://drive.google.com/file/d/1QsOi-zVPicMfMej0OfFBV52cDQKGJbEh/view?usp=sharing" width="900px" />
+    <img src="https://drive.google.com/a/YOURDOMAIN.COM/thumbnail?id=1QsOi-zVPicMfMej0OfFBV52cDQKGJbEh&sz=w600"/>
   </div>
 </div>
+
 
 # Getting started
 
